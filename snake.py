@@ -1,22 +1,12 @@
 import pygame
 from random import randint
 
-pygame.init()
-
-resolucao = (500, 500)
-screen = pygame.display.set_mode(resolucao)
-
-pygame.display.set_caption("Snake Gaming 🐍")
-
-clock = pygame.time.Clock()
-
-color_bg = (0, 68, 83)
-
 
 class Snake:
     cor = (255, 255, 255)
     tamanho = (10, 10)
     velocidade = 10
+    tamanho_max = 49 * 49 # tamanho maximo da cobra (faz a verificação dessa condição na funcao colisao)
 
     def __init__(self):
         self.textura = pygame.Surface(self.tamanho)
@@ -78,7 +68,7 @@ class Snake:
         x = cabeca[0]
         y = cabeca[1]
 
-        return x < 0 or y < 0 or x > 490 or y > 490
+        return x < 0 or y < 0 or x > 490 or y > 490 or len(self.corpo) > self.tamanho_max
 
     def auto_colisao(self):
         return self.corpo[0] in self.corpo[1:]  # verifica se a posição da cabeça da cobra é a mesma de alguma parte do corpo
@@ -91,53 +81,75 @@ class Fruta:
     cor = (255, 0, 0)
     tamanho = (10, 10)  # tamanho da nossa frutinha
 
-    def __init__(self):  # Iniciar a fruta
+    def __init__(self, snake):  # Iniciar a fruta
         self.textura = pygame.Surface(self.tamanho)
         self.textura.fill(self.cor)
-        cordenada_x = randint(0, 49) * 10  # garantir que sempre seja multipla de 10
-        cordenada_y = randint(0, 49) * 10
-        self.posicao = (cordenada_x, cordenada_y)
+
+        self.posicao = Fruta.criar_posicao(snake)
+
+    @staticmethod
+    def criar_posicao(snake):
+        x = randint(0, 49) * 10  # garantir que sempre seja multipla de 10
+        y = randint(0, 49) * 10
+
+        if (x, y) in snake.corpo:   # garantir a fruta de não nascer no espaço em que a cobra está
+            Fruta.criar_posicao(snake)
+        else:
+            return x, y
 
     def blit(self, screen):
         screen.blit(self.textura, self.posicao)
 
 
-fruta = Fruta()
-snake = Snake()
+if __name__ == "__main__":
 
-while True:
-    clock.tick(snake.nivel_vel)
-    print(clock.get_fps())
+    pygame.init()
 
-    for event in pygame.event.get():  # pegas os eventos que estão ocorrendo
-        if event.type == pygame.QUIT:
-            exit()  # sair do jogo
+    resolucao = (500, 500)
+    screen = pygame.display.set_mode(resolucao)
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                snake.cima()
-                break
-            elif event.key == pygame.K_DOWN:
-                snake.baixo()
-                break
-            elif event.key == pygame.K_LEFT:
-                snake.esquerda()
-                break
-            elif event.key == pygame.K_RIGHT:
-                snake.direita()
-                break
+    pygame.display.set_caption("Snake Gaming 🐍")
 
-    if snake.colisao_fruta(fruta):
-        snake.comer(fruta)
-        fruta = Fruta()  # Ao comer, cria uma nova fruta (nova instancia do objeto)
+    clock = pygame.time.Clock()
 
-    if snake.colisao_parede() or snake.auto_colisao():
-        snake = Snake()
+    color_bg = (0, 68, 83)
 
-    snake.andar()
+    snake = Snake()
+    fruta = Fruta(snake)
 
-    screen.fill(color_bg)
-    fruta.blit(screen)
-    snake.blit(screen)
+    while True:
+        clock.tick(snake.nivel_vel)
+        print(clock.get_fps())
 
-    pygame.display.update()
+        for event in pygame.event.get():  # pegas os eventos que estão ocorrendo
+            if event.type == pygame.QUIT:
+                exit()  # sair do jogo
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    snake.cima()
+                    break
+                elif event.key == pygame.K_DOWN:
+                    snake.baixo()
+                    break
+                elif event.key == pygame.K_LEFT:
+                    snake.esquerda()
+                    break
+                elif event.key == pygame.K_RIGHT:
+                    snake.direita()
+                    break
+
+        if snake.colisao_fruta(fruta):
+            snake.comer(fruta)
+            fruta = Fruta(snake)  # Ao comer, cria uma nova fruta (nova instancia do objeto)
+
+        if snake.colisao_parede() or snake.auto_colisao():
+            snake = Snake()
+
+        snake.andar()
+
+        screen.fill(color_bg)
+        fruta.blit(screen)
+        snake.blit(screen)
+
+        pygame.display.update()
