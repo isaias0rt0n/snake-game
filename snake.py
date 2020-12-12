@@ -6,10 +6,11 @@ pygame.init()
 resolucao = (500, 500)
 screen = pygame.display.set_mode(resolucao)
 
+pygame.display.set_caption("Snake Gaming 🐍")
+
 clock = pygame.time.Clock()
 
 color_bg = (0, 68, 83)
-
 
 
 class Snake:
@@ -23,6 +24,9 @@ class Snake:
 
         self.corpo = [(100, 100), (90, 100), (80, 100)]  # vai cresenco a medida q come a fruta. Melhor aplicação -> estrutura de dados lista
         self.direcao = "direita"
+
+        self.pontos = 0
+        self.nivel_vel = 10  # velocidade incial da cobrinha
 
     def blit(self, screen):
         for posicao in self.corpo:
@@ -64,7 +68,10 @@ class Snake:
         return self.corpo[0] == fruta.posicao
 
     def comer(self, fruta):
-        self.corpo.append((0, 0))   # coloca qualqer posição, ja que sera removido na lógica do corpo e acrescido na cabeça
+        self.corpo.append((0, 0))  # coloca qualqer posição, ja que sera removido na lógica do corpo e acrescido na cabeça
+        self.pontos += 1  # ao comer fruta, soma um ponto
+        self.nivel_vel += 5  # ao comer, aumenta a velocidade da cobra
+        pygame.display.set_caption("Snake | Pontos: {}".format(self.pontos))
 
     def colisao_parede(self):
         cabeca = self.corpo[0]
@@ -72,6 +79,12 @@ class Snake:
         y = cabeca[1]
 
         return x < 0 or y < 0 or x > 490 or y > 490
+
+    def auto_colisao(self):
+        return self.corpo[0] in self.corpo[1:]  # verifica se a posição da cabeça da cobra é a mesma de alguma parte do corpo
+
+    def nivel(self):
+        return self.nivel_vel
 
 
 class Fruta:
@@ -93,7 +106,7 @@ fruta = Fruta()
 snake = Snake()
 
 while True:
-    clock.tick(10)
+    clock.tick(snake.nivel_vel)
     print(clock.get_fps())
 
     for event in pygame.event.get():  # pegas os eventos que estão ocorrendo
@@ -114,12 +127,11 @@ while True:
                 snake.direita()
                 break
 
-
     if snake.colisao_fruta(fruta):
         snake.comer(fruta)
-        fruta = Fruta() # Ao comer, cria uma nova fruta (nova instancia do objeto)
+        fruta = Fruta()  # Ao comer, cria uma nova fruta (nova instancia do objeto)
 
-    if snake.colisao_parede():
+    if snake.colisao_parede() or snake.auto_colisao():
         snake = Snake()
 
     snake.andar()
@@ -127,6 +139,5 @@ while True:
     screen.fill(color_bg)
     fruta.blit(screen)
     snake.blit(screen)
-
 
     pygame.display.update()
